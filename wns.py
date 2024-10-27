@@ -1,5 +1,6 @@
 import streamlit as st
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # Title and Introduction
 st.title('Weekly Net Stimulus and Muscle Growth Calculator with Recovery Times')
@@ -7,6 +8,10 @@ st.write("""
 This app calculates your weekly net stimulus for resistance training based on the number of sets per exercise and workout frequency.
 It also checks if the volume of sets and frequency is too high for proper recovery.
 """)
+
+# Initialize session state to store table data if not already initialized
+if "data" not in st.session_state:
+    st.session_state.data = []
 
 # Inputs
 sets_per_exercise = st.number_input('Enter the number of sets per exercise', min_value=1, max_value=12, value=3, help="Choose the number of sets for each exercise session (1-12)")
@@ -85,7 +90,29 @@ if st.button('Calculate'):
 
         # Add visual output of Weekly Stimulus vs. Maintenance Level
         fig, ax = plt.subplots()
-        ax.bar(["Weekly Stimulus", "Maintenance Level"], [weekly_net_stimulus, 1.61])
+        ax.bar(["Weekly Stimulus", "Maintenance Level"], [weekly_net_stimulus, 1.61], color=['blue', 'green'])
         ax.set_ylabel("AU (Arbitrary Units)")
         ax.set_title("Weekly Net Stimulus vs. Maintenance Level")
         st.pyplot(fig)
+
+        # Append new results to session state data
+        st.session_state.data.append({
+            "Number of Sets": sets_per_exercise,
+            "Frequency per Week": frequency_per_week,
+            "Weekly Net Stimulus (AU)": round(weekly_net_stimulus, 2)
+        })
+
+        # Keep only the latest 10 entries
+        if len(st.session_state.data) > 10:
+            st.session_state.data.pop(0)
+
+# Display the results table if data is available
+if st.session_state.data:
+    df = pd.DataFrame(st.session_state.data)
+    st.subheader("Scenario Records")
+    st.table(df)
+
+# Reset button to clear the table data
+if st.button('Reset Table'):
+    st.session_state.data = []  # Clear the table data
+    st.write("Table has been reset.")
